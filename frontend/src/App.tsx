@@ -397,6 +397,7 @@ export default function App() {
     <div style={page}>
       <div style={headerBar}>
         <img src="/icon.png" alt="HermitClaw" style={headerIcon} />
+        <span style={headerTitle}>HermitClaw</span>
       </div>
       <div style={twoPane}>
         {/* Left pane — Game world */}
@@ -552,6 +553,13 @@ const headerBar: React.CSSProperties = {
 const headerIcon: React.CSSProperties = {
   maxWidth: "100%",
   maxHeight: 80,
+};
+
+const headerTitle: React.CSSProperties = {
+  fontSize: 28,
+  fontWeight: 800,
+  color: "#fff",
+  whiteSpace: "nowrap",
 };
 
 const twoPane: React.CSSProperties = {
