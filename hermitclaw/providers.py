@@ -67,6 +67,27 @@ TOOLS = [
 ]
 
 
+def _translate_tools_for_completions(tools: list[dict]) -> list[dict]:
+    """Convert Responses API tool defs to Chat Completions format.
+
+    Drops web_search_preview (unsupported). Wraps function tools in the
+    {"type": "function", "function": {...}} structure Chat Completions expects.
+    """
+    result = []
+    for tool in tools:
+        if tool.get("type") != "function":
+            continue
+        result.append({
+            "type": "function",
+            "function": {
+                "name": tool["name"],
+                "description": tool.get("description", ""),
+                "parameters": tool.get("parameters", {}),
+            },
+        })
+    return result
+
+
 def _client() -> openai.OpenAI:
     return openai.OpenAI(api_key=config["api_key"])
 
