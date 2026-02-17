@@ -163,6 +163,12 @@ if __name__ == "__main__":
         exec(compile(code, "<sandbox>", "exec"))
     else:
         script = sys.argv[2]
+        if script == "-" or not script.strip():
+            print(
+                "Error: 'python -' (stdin) is not supported in sandbox. Use 'python -c \"code\"' or 'python script.py'",
+                file=sys.stderr,
+            )
+            sys.exit(1)
         sys.argv = sys.argv[2:]  # normalize sys.argv for the script
         with open(script) as f:
             exec(
