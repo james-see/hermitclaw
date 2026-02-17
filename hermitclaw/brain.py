@@ -451,8 +451,8 @@ class Brain:
             return {"type": "moving", "detail": f"Going to {loc}"}
         if tool_name == "respond":
             return {"type": "conversing", "detail": "Talking to someone..."}
-        if tool_name == "fetch_url":
-            return {"type": "searching", "detail": "Fetching a web page..."}
+        if tool_name in ("fetch_url", "web_search", "web_fetch"):
+            return {"type": "searching", "detail": f"{tool_name.replace('_', ' ')}..."}
         if tool_name == "shell":
             cmd = tool_args.get("command", "").strip()
             # Python script or one-liner

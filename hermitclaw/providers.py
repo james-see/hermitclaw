@@ -97,6 +97,47 @@ TOOLS = [
     },
 ]
 
+# Ollama cloud web search tools — for minimax-m2.5:cloud etc. when OLLAMA_API_KEY is set
+OLLAMA_WEB_TOOLS = [
+    {
+        "type": "function",
+        "name": "web_search",
+        "description": (
+            "Search the web for current information. Use for research, fact-checking, "
+            "or finding recent news. Returns titles, URLs, and content snippets."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Search query"},
+                "max_results": {
+                    "type": "integer",
+                    "description": "Max results to return (default 5, max 10)",
+                },
+            },
+            "required": ["query"],
+        },
+    },
+    {
+        "type": "function",
+        "name": "web_fetch",
+        "description": (
+            "Fetch the full content of a specific URL. Use after web_search to read "
+            "a page in detail. Returns page title, content, and links."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "URL to fetch (e.g. https://...)",
+                }
+            },
+            "required": ["url"],
+        },
+    },
+]
+
 
 def _translate_tools_for_completions(tools: list[dict]) -> list[dict]:
     """Convert Responses API tool defs to Chat Completions format.
@@ -306,6 +347,9 @@ def _chat_completions(
     }
     if tools:
         completions_tools = _translate_tools_for_completions(TOOLS)
+        if config.get("ollama_api_key") and config["provider"] == "custom":
+            ollama_tools = _translate_tools_for_completions(OLLAMA_WEB_TOOLS)
+            completions_tools = completions_tools + ollama_tools
         if completions_tools:
             kwargs["tools"] = completions_tools
 

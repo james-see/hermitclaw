@@ -1,5 +1,6 @@
 """Sandboxed shell — the agent can run commands, but only inside environment/."""
 
+import json
 import logging
 import os
 import re
@@ -11,7 +12,12 @@ import urllib.request
 from urllib.error import URLError
 from urllib.parse import urlparse
 
+from hermitclaw.config import config
+
 logger = logging.getLogger("hermitclaw.tools")
+
+OLLAMA_WEB_SEARCH_URL = "https://ollama.com/api/web_search"
+OLLAMA_WEB_FETCH_URL = "https://ollama.com/api/web_fetch"
 
 # Commands that should never be run (checked as prefixes after stripping)
 BLOCKED_PREFIXES = [
@@ -242,6 +248,66 @@ def run_command(command: str, env_root: str) -> str:
         return f"Error: {e}"
 
 
+def ollama_web_search(query: str, max_results: int = 5) -> str:
+    """Call Ollama cloud web search API. Requires OLLAMA_API_KEY."""
+    api_key = config.get("ollama_api_key")
+    if not api_key:
+        return "Error: OLLAMA_API_KEY is required for web search. Get one at https://ollama.com/settings/keys"
+    try:
+        data = json.dumps(
+            {"query": query, "max_results": min(max_results, 10)}
+        ).encode()
+        req = urllib.request.Request(
+            OLLAMA_WEB_SEARCH_URL,
+            data=data,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            out = json.loads(resp.read().decode())
+        lines = []
+        for r in out.get("results", []):
+            lines.append(f"**{r.get('title', '')}**")
+            lines.append(f"URL: {r.get('url', '')}")
+            lines.append(r.get("content", "")[:2000])
+            lines.append("")
+        return "\n".join(lines).strip()[:8000] or "No results found."
+    except URLError as e:
+        return f"Error: {e.reason}"
+    except Exception as e:
+        return f"Error: {e}"
+
+
+def ollama_web_fetch(url: str) -> str:
+    """Call Ollama cloud web fetch API. Requires OLLAMA_API_KEY."""
+    api_key = config.get("ollama_api_key")
+    if not api_key:
+        return "Error: OLLAMA_API_KEY is required for web fetch. Get one at https://ollama.com/settings/keys"
+    try:
+        data = json.dumps({"url": url}).encode()
+        req = urllib.request.Request(
+            OLLAMA_WEB_FETCH_URL,
+            data=data,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            out = json.loads(resp.read().decode())
+        title = out.get("title", "")
+        content = out.get("content", "")[:6000]
+        return f"**{title}**\n\n{content}" if title else content
+    except URLError as e:
+        return f"Error: {e.reason}"
+    except Exception as e:
+        return f"Error: {e}"
+
+
 def fetch_url(url: str, max_chars: int = 50000, timeout: int = 15) -> str:
     """Fetch a URL and return its content (for research). Runs in main process, not sandbox."""
     parsed = urlparse(url)
@@ -274,5 +340,12 @@ def execute_tool(name: str, arguments: dict, env_root: str) -> str:
         return run_command(arguments["command"], env_root)
     elif name == "fetch_url":
         return fetch_url(arguments.get("url", ""))
+    elif name == "web_search":
+        return ollama_web_search(
+            arguments.get("query", ""),
+            arguments.get("max_results", 5),
+        )
+    elif name == "web_fetch":
+        return ollama_web_fetch(arguments.get("url", ""))
     else:
         return f"Unknown tool: {name}"

@@ -48,6 +48,11 @@ def load_config() -> dict:
         "model", "gpt-4o"
     )
 
+    # Ollama cloud web search (for minimax-m2.5:cloud etc.)
+    config["ollama_api_key"] = os.environ.get("OLLAMA_API_KEY") or config.get(
+        "ollama_api_key"
+    )
+
     # Defaults for numeric settings
     config.setdefault("thinking_pace_seconds", 45)
     config.setdefault("max_thoughts_in_context", 20)

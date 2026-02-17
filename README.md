@@ -357,6 +357,14 @@ base_url: "http://localhost:11434/v1"
 embedding_model: "nomic-embed-text"  # required for memory search; run: ollama pull nomic-embed-text
 ```
 
+**Using Ollama cloud with web search** (e.g. minimax-m2.5:cloud):
+```yaml
+provider: "custom"
+model: "minimax-m2.5:cloud"
+base_url: "http://localhost:11434/v1"
+# export OLLAMA_API_KEY=your-key   # enables web_search + web_fetch from ollama.com
+```
+
 **Using OpenRouter:**
 ```yaml
 provider: "openrouter"
