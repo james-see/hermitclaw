@@ -421,15 +421,13 @@ def _chat_completions(
         json.dumps(summary, default=str),
     )
     # Dump full payload for debugging 500s
-    debug_path = os.path.join(
-        os.path.dirname(__file__), "..", "debug_last_request.json"
-    )
+    debug_path = os.path.join(os.getcwd(), "debug_last_request.json")
     try:
         with open(debug_path, "w") as f:
             json.dump(kwargs, f, indent=2, default=str)
         logger.info("Full request payload written to %s", debug_path)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("Could not write debug payload: %s", exc)
     try:
         response = _completions_client().chat.completions.create(**kwargs)
         return _normalize_completions_response(response)
